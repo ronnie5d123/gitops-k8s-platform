@@ -1,0 +1,40 @@
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: gitops-app
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: gitops-app
+
+  template:
+    metadata:
+      labels:
+        app: gitops-app
+
+    spec:
+      containers:
+        - name: flask-app
+          image: ghcr.io/ronnie5d123/gitops-k8s-platform:main
+
+          ports:
+            - containerPort: 5000
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 20
