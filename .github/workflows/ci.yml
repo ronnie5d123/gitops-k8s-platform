@@ -51,12 +51,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      
       - name: Extract image metadata
         if: github.event_name == 'push'
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=sha,format=long
+            type=ref,event=branch
+
 
       - name: Build and push Docker image
         if: github.event_name == 'push'
