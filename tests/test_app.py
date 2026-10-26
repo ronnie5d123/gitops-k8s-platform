@@ -16,7 +16,7 @@ def test_home_endpoint():
 
     data = response.get_json()
     assert data["application"] == "GitOps Kubernetes Platform"
-    assert data["message"] == "Application is running!"
+    assert data["message"] == "Application is running through our GitOps CI/CD pipeline!"
     assert data["version"] == "1.0.0"
 
 

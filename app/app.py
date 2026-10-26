@@ -8,7 +8,7 @@ app = Flask(__name__)
 def home():
     return jsonify({
         "application": "GitOps Kubernetes Platform",
-        "message": "Application is running!",
+        "message": "Application is running through our GitOps CI/CD pipeline!",
         "version": "1.0.0"
     })
 
