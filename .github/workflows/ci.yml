@@ -41,7 +41,7 @@ jobs:
         run: docker build -t gitops-k8s-platform:test .
 
       - name: Scan Docker image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: gitops-k8s-platform:test
           format: table
