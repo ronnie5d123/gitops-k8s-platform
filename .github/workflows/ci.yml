@@ -40,6 +40,16 @@ jobs:
       - name: Build Docker image
         run: docker build -t gitops-k8s-platform:test .
 
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: gitops-k8s-platform:test
+          format: table
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '0'
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -51,7 +61,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      
+
       - name: Extract image metadata
         if: github.event_name == 'push'
         id: meta
@@ -72,7 +82,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      
+
       - name: Update Helm chart image tag
         if: github.event_name == 'push'
         env:
