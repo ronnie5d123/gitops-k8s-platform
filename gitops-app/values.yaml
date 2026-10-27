@@ -9,7 +9,7 @@ replicaCount: 2
 image:
   repository: ghcr.io/ronnie5d123/gitops-k8s-platform
   pullPolicy: IfNotPresent
-  tag: "sha-e62a9ff7d9279c6fb51f5229b1e493e2e16ca36f"
+  tag: "sha-364a6299800623abd00e14c1a40709d9a6415d8c"
 
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
