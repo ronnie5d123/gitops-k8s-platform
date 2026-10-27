@@ -15,16 +15,17 @@ flowchart TD
     A[Developer pushes code] --> B[GitHub Repository]
     B --> C[GitHub Actions CI]
     C --> D[Run tests and build Docker image]
-    D --> E[Publish versioned image to GHCR]
-    E --> F[Update Helm values with image tag]
-    F --> G[GitOps configuration in Git]
-    G --> H[Argo CD]
-    H --> I[Kubernetes Deployment]
-    I --> J[Flask application pods]
-    J --> K[Service]
-    L[Prometheus] --> M[Grafana Dashboard]
-    N[Kubernetes and node metrics] --> L
-    I --> N
+    D --> E[Container smoke tests]
+    E --> F[Trivy vulnerability scan]
+    F --> G[Publish image to GHCR]
+    G --> H[Update Helm image tag in Git]
+    H --> I[Argo CD detects Git changes]
+    I --> J[Kubernetes Deployment]
+    J --> K[Flask application pods]
+    K --> L[Service]
+    J --> M[Kubernetes and node metrics]
+    M --> N[Prometheus]
+    N --> O[Grafana Dashboard]
 ```
 ## Grafana Monitoring Dashboard
 
@@ -65,17 +66,22 @@ The dashboard provides visibility into workload health and resource utilization 
 
 The application runs using Gunicorn inside the Docker container.
 
+
 ## CI/CD and GitOps Workflow
 
 1. A developer pushes application changes to GitHub.
-2. GitHub Actions runs the configured validation and test steps.
-3. The workflow builds the Docker image and publishes it to GHCR.
-4. The workflow updates the image tag in the Helm chart values file.
-5. Argo CD monitors the configured Git repository and Helm chart path.
-6. Argo CD reconciles the desired application configuration with the Kubernetes environment.
-7. Kubernetes runs the application replicas and uses the configured health probes.
+2. GitHub Actions runs Python syntax checks and automated tests.
+3. The workflow builds the Docker image.
+4. A temporary container is started, and smoke tests validate `/health` and `/`.
+5. Trivy scans the built image for HIGH and CRITICAL vulnerabilities, with unfixed vulnerabilities ignored.
+6. On pushes to `main`, the workflow publishes the versioned image to GitHub Container Registry (GHCR).
+7. GitHub Actions updates the image tag in the Helm chart values file.
+8. Argo CD monitors the configured Git repository and Helm chart path.
+9. Argo CD reconciles the desired configuration with Kubernetes.
+10. Kubernetes runs the application replicas and uses the configured health probes.
 
 The image tag is tied to the source commit, making the deployed image traceable to a specific revision.
+
 
 ## Kubernetes Deployment
 
@@ -146,18 +152,23 @@ The monitoring configuration used for installation is stored in `monitoring-valu
 ## Repository Structure
 
 ```text
-.
+
 ├── .github/
 │   └── workflows/
 │       └── ci.yml
 ├── app/
 │   ├── app.py
 │   └── requirements.txt
+├── docs/
+│   └── images/
+│       └── Screenshot 2026-10-28 015406.png
 ├── gitops-app/
 │   ├── templates/
 │   ├── Chart.yaml
 │   └── values.yaml
 ├── k8s/
+├── scripts/
+│   └── smoke-test.ps1
 ├── tests/
 ├── Dockerfile
 ├── .dockerignore
@@ -165,6 +176,7 @@ The monitoring configuration used for installation is stored in `monitoring-valu
 ├── argocd-application.yaml
 ├── monitoring-values.yaml
 └── README.md
+
 ```
 
 ## Local Development
@@ -213,6 +225,25 @@ curl http://localhost:5000/health
 helm lint ./gitops-app
 ```
 
+### Run the Kubernetes smoke test
+
+With the application deployed and the Kubernetes cluster running, start a port-forward in one PowerShell terminal:
+
+```powershell
+kubectl port-forward svc/gitops-app 8081:5000
+```
+
+Keep that terminal open. In a second PowerShell terminal, run the smoke-test script from the repository root:
+
+```powershell
+.\scripts\smoke-test.ps1
+```
+
+The script checks the `/health` endpoint, verifies the application identity, and confirms that a version is returned.
+
+The CI pipeline separately tests the built Docker container before the Trivy scan.
+
+
 ### Inspect Kubernetes resources
 
 With the local Kubernetes cluster running:
@@ -229,7 +260,7 @@ kubectl get pods -n monitoring
 - Add automated deployment smoke tests after rollout.
 - Configure application-specific Prometheus metrics and scraping.
 - Introduce alerting rules and notification integrations.
-- Add security scanning for dependencies and container images.
+- Add dependency scanning and expand security policies beyond the current Trivy vulnerability gate.
 - Configure persistent storage and resource-aware monitoring for longer-running environments.
 - Explore automated rollback strategies and progressive delivery.
 
